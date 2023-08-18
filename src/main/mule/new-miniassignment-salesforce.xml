@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="228d5dd4-094a-4c87-bfac-bfcec1bbacf3" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="6e848f6a-ea4a-48a8-a4e5-c902d29bb7f9" >
+		<salesforce:basic-connection username="rahul@hashedin.sandbox" password="R@hul-1412" securityToken="b3n7yllLNioj5h1oHVllDs5Vs"/>
+	</salesforce:sfdc-config>
+	<flow name="createRecordFlow" doc:id="f8bd7a2a-a1fc-4a41-b013-c1a24b64eb09" >
+		<http:listener doc:name="Listener" doc:id="389e6dd1-4741-4f7a-8f88-235f5acce0ea" config-ref="HTTP_Listener_config" path="/insert"/>
+		<salesforce:create doc:name="Create" doc:id="97b16390-c1ed-4f28-9430-a07c13c78788" config-ref="Salesforce_Config" type="Employee__c"/>
+		<ee:transform doc:name="Transform Message" doc:id="ffecf876-ad02-4031-a159-a503f057c882">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Description": "file created successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="updateRecordFlow" doc:id="6f72e167-0742-44c1-ae38-23f5fceef9ca" >
+		<http:listener doc:name="Listener" doc:id="99dc5efc-c31d-416f-8548-2ad94d64460e" config-ref="HTTP_Listener_config" path="/update" allowedMethods="PUT"/>
+		<salesforce:update doc:name="Update" doc:id="aa1628c0-785b-4007-bd22-89deedf05842" config-ref="Salesforce_Config" type="Employee__c"/>
+		<ee:transform doc:name="Transform Message" doc:id="52f43986-4d48-48c1-a835-55b09bcdad9d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Description": "file updated successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+</flow>
+	<flow name="deleteRecordFlow" doc:id="34f1ff08-ed09-4775-afd4-18af44b74228" >
+		
+		<http:listener doc:name="Listener" doc:id="b5cc8677-056a-4e8a-94d9-ad279339607d" config-ref="HTTP_Listener_config" path="/delete" allowedMethods="DELETE"/>
+		<salesforce:delete doc:name="Delete" doc:id="178a9dab-1fe9-409a-9289-c4edfa16aac3" config-ref="Salesforce_Config">
+			<salesforce:ids ><![CDATA[#[payload.id]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform doc:name="Transform Message" doc:id="1937e3a3-5eb5-4700-a169-324b03c13eca">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"description": "file deleted successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+</flow>
+	<flow name="fetchRecordFlow" doc:id="6b674f48-e61f-42c1-a99f-4024a817173e" >
+		<http:listener doc:name="Listener" doc:id="466da4bd-da4e-4cc9-87f9-90e875acc809" config-ref="HTTP_Listener_config" path="/fetch"/>
+		<salesforce:query doc:name="Query" doc:id="e09b730f-eebc-40ec-a3d5-4444a273f582" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[SELECT Department__c,Email__c,Id,Name FROM Employee__c WHERE Name = ':name']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[{
+	"name" : payload.name
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="1b1189bc-b99f-41f4-9128-10f08c80abbb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Description": "file fetched successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
